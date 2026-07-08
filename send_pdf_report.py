@@ -1,7 +1,7 @@
 """
 Generates the long, unpaginated PDF for each SDR and for the manager rollup,
 then emails each as a plain-text message with the PDF attached. Recipients come
-from sdrs.json unless --test-recipient is provided.
+from sdrs.json unless --test-mode or --test-recipient is provided.
 """
 import argparse
 import json
@@ -23,6 +23,7 @@ from sdr_config import SDR_SHORT
 PST = ZoneInfo("America/Los_Angeles")
 BASE_DIR = Path(__file__).parent
 
+TEST_RECIPIENT = "jason.rui@schneiderinnovations.com"
 TMP_DIR = Path("/tmp/sdr_report_pdfs")
 
 
@@ -50,11 +51,13 @@ def _valid_recipients(recipients):
     ]
 
 
-def main(report_date=None, send_mode="both", test_recipient=None):
+def main(report_date=None, send_mode="both", test_mode=False, test_recipient=None):
     if report_date is None:
         report_date = default_report_date()
     date_str = report_date.isoformat()
     TMP_DIR.mkdir(parents=True, exist_ok=True)
+    if test_mode and not test_recipient:
+        test_recipient = TEST_RECIPIENT
     sdr_config = load_sdr_config()
     sdr_recipients = {
         sdr["name"]: sdr.get("email", "").strip()
@@ -148,9 +151,19 @@ if __name__ == "__main__":
         help="Which reports to email. Defaults to both.",
     )
     parser.add_argument(
+        "--test-mode",
+        action="store_true",
+        help=f"Send all selected reports to {TEST_RECIPIENT} instead of the configured recipients.",
+    )
+    parser.add_argument(
         "--test-recipient",
         default=None,
         help="Send all selected reports to this address instead of the configured recipients.",
     )
     args = parser.parse_args()
-    main(report_date=args.date, send_mode=args.send, test_recipient=args.test_recipient)
+    main(
+        report_date=args.date,
+        send_mode=args.send,
+        test_mode=args.test_mode,
+        test_recipient=args.test_recipient,
+    )

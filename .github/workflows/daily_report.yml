@@ -14,6 +14,20 @@ on:
         description: "Optional PST report date to run, in YYYY-MM-DD format. Defaults to yesterday."
         required: false
         type: string
+      send_mode:
+        description: "Which reports to email."
+        required: false
+        default: "both"
+        type: choice
+        options:
+          - both
+          - manager
+          - sdr
+      test_mode:
+        description: "Send selected reports to Jason only instead of real recipients."
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   send-report:
@@ -34,7 +48,7 @@ jobs:
         run: |
           pip install requests jinja2 google-auth google-api-python-client weasyprint pymupdf numpy python-dateutil
 
-      - name: Run daily PDF report (test phase - sends to Jason only)
+      - name: Run daily PDF report
         env:
           AIRCALL_API_ID: ${{ secrets.AIRCALL_API_ID }}
           AIRCALL_API_TOKEN: ${{ secrets.AIRCALL_API_TOKEN }}
@@ -42,8 +56,14 @@ jobs:
           GMAIL_CLIENT_SECRET: ${{ secrets.GMAIL_CLIENT_SECRET }}
           GMAIL_REFRESH_TOKEN: ${{ secrets.GMAIL_REFRESH_TOKEN }}
         run: |
+          args=()
           if [ -n "${{ github.event.inputs.report_date }}" ]; then
-            python send_pdf_report.py --date "${{ github.event.inputs.report_date }}"
-          else
-            python send_pdf_report.py
+            args+=(--date "${{ github.event.inputs.report_date }}")
           fi
+          if [ -n "${{ github.event.inputs.send_mode }}" ]; then
+            args+=(--send "${{ github.event.inputs.send_mode }}")
+          fi
+          if [ "${{ github.event.inputs.test_mode }}" = "true" ]; then
+            args+=(--test-mode)
+          fi
+          python send_pdf_report.py "${args[@]}"

@@ -9,8 +9,8 @@ chart-heavy PDF report — one per SDR plus a team rollup for managers.
 `send_pdf_report.py` is the active script. It generates a long, unpaginated
 PDF for each SDR and for the manager rollup, then emails each as a plain-text
 message with the PDF attached. Recipients come from `sdrs.json`. Use
-`--test-recipient` to send the selected reports to one test address instead of
-the real recipients.
+`--test-mode` to send the selected reports to Jason instead of the real
+recipients, or `--test-recipient` to route them to a different test address.
 
 ## Before running
 
@@ -66,17 +66,19 @@ python send_pdf_report.py --send manager
 # Only send individual SDR dashboards:
 python send_pdf_report.py --send sdr
 # Test without sending to the real recipients:
+python send_pdf_report.py --send both --test-mode
+# Test to a specific alternate address:
 python send_pdf_report.py --send both --test-recipient you@example.com
 ```
 
 This sends real Aircall + Sheet data and real charts. Without
-`--test-recipient`, emails go to the recipients configured in `sdrs.json`.
+`--test-mode`, emails go to the recipients configured in `sdrs.json`.
 
 The scheduled GitHub Action defaults to yesterday in Pacific time. When running
 it manually from GitHub Actions, fill in the optional `report_date` field with a
 date like `2026-07-06` to rerun a specific day. Use `send_mode` to choose
-`both`, `manager`, or `sdr`; use `test_recipient` to route all selected reports
-to one email address for testing.
+`both`, `manager`, or `sdr`; enable `test_mode` to route all selected reports
+to Jason for testing.
 
 ## Going live (later)
 
