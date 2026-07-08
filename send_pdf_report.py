@@ -1,16 +1,10 @@
 """
-Test-phase delivery: generates the long, unpaginated PDF for each SDR and
-for the manager rollup, then emails each as a plain-text message with the
-PDF attached - no HTML email body for now.
-
-Everything routes to TEST_RECIPIENT below regardless of the real SDR/
-manager email addresses in sdrs.json. Swap TEST_RECIPIENT for the real
-per-SDR/manager routing (see send_report.py's HTML version for that
-pattern) once this has been validated against a few real days of data.
+Generates the long, unpaginated PDF for each SDR and for the manager rollup,
+then emails each as a plain-text message with the PDF attached. Recipients come
+from sdrs.json unless --test-recipient is provided.
 """
 import argparse
 import json
-import os
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -29,9 +23,6 @@ from sdr_config import SDR_SHORT
 PST = ZoneInfo("America/Los_Angeles")
 BASE_DIR = Path(__file__).parent
 
-# TEMPORARY: everything goes here during testing, regardless of sdrs.json.
-TEST_RECIPIENT = "jason.rui@schneiderinnovations.com"
-
 TMP_DIR = Path("/tmp/sdr_report_pdfs")
 
 
@@ -46,11 +37,30 @@ def parse_report_date(raw_date):
         raise argparse.ArgumentTypeError("date must be in YYYY-MM-DD format") from exc
 
 
-def main(report_date=None):
+def load_sdr_config():
+    with open(BASE_DIR / "sdrs.json", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _valid_recipients(recipients):
+    return [
+        recipient.strip()
+        for recipient in recipients
+        if recipient and recipient.strip() and recipient.strip() != "REPLACE_ME"
+    ]
+
+
+def main(report_date=None, send_mode="both", test_recipient=None):
     if report_date is None:
         report_date = default_report_date()
     date_str = report_date.isoformat()
     TMP_DIR.mkdir(parents=True, exist_ok=True)
+    sdr_config = load_sdr_config()
+    sdr_recipients = {
+        sdr["name"]: sdr.get("email", "").strip()
+        for sdr in sdr_config.get("sdrs", [])
+    }
+    manager_recipients = _valid_recipients(sdr_config.get("managers", []))
 
     calls = fetch_calls_for_day(target_date=report_date)
     aircall_kpis_by_sdr = compute_sdr_kpis(calls)
@@ -75,41 +85,52 @@ def main(report_date=None):
     logo = get_logo_data_uri()
 
     # --- Per-SDR PDFs ---
-    for name in active_roster:
-        kpis = kpis_by_sdr[name]
-        display_name = SDR_SHORT.get(name, name.split(" ")[0])
-        sdr_view = build_sdr_view(kpis, previous_kpis=prev_kpis_by_sdr.get(name))
-        html = sdr_template.render(sdr_name=display_name, date=date_str, kpis=sdr_view, logo_data_uri=logo)
+    if send_mode in ("both", "sdr"):
+        for name in active_roster:
+            kpis = kpis_by_sdr[name]
+            display_name = SDR_SHORT.get(name, name.split(" ")[0])
+            sdr_view = build_sdr_view(kpis, previous_kpis=prev_kpis_by_sdr.get(name))
+            html = sdr_template.render(sdr_name=display_name, date=date_str, kpis=sdr_view, logo_data_uri=logo)
 
-        pdf_path = TMP_DIR / f"sdr_report_{name.replace(' ', '_')}_{date_str}.pdf"
-        render_long_pdf(html, str(pdf_path), page_width_px=740)
+            pdf_path = TMP_DIR / f"sdr_report_{name.replace(' ', '_')}_{date_str}.pdf"
+            render_long_pdf(html, str(pdf_path), page_width_px=740)
 
-        send_email_with_attachment(
-            to=TEST_RECIPIENT,
-            subject=f"[TEST] Daily Performance - {display_name} - {date_str}",
-            text_body=f"Daily performance report for {display_name} ({date_str}) attached.",
-            attachment_path=str(pdf_path),
-            attachment_filename=f"{display_name}_Daily_Performance_{date_str}.pdf",
-        )
+            recipient = test_recipient or sdr_recipients.get(name)
+            if not recipient or recipient == "REPLACE_ME":
+                print(f"WARNING: no email configured for {name}; skipping SDR report.")
+                continue
+
+            send_email_with_attachment(
+                to=recipient,
+                subject=f"Daily Performance - {display_name} - {date_str}",
+                text_body=f"Daily performance report for {display_name} ({date_str}) attached.",
+                attachment_path=str(pdf_path),
+                attachment_filename=f"{display_name}_Daily_Performance_{date_str}.pdf",
+            )
 
     # --- Manager rollup PDF ---
-    summary, rows, team_donut_svg, team_legend = build_manager_view(
-        kpis_by_sdr, active_roster, previous_kpis_by_sdr=prev_kpis_by_sdr
-    )
-    manager_html = manager_template.render(
-        date=date_str, summary=summary, leaderboard=rows,
-        team_donut_svg=team_donut_svg, team_legend=team_legend, logo_data_uri=logo,
-    )
-    manager_pdf_path = TMP_DIR / f"manager_report_{date_str}.pdf"
-    render_long_pdf(manager_html, str(manager_pdf_path), page_width_px=940)
+    if send_mode in ("both", "manager"):
+        summary, rows, team_donut_svg, team_legend = build_manager_view(
+            kpis_by_sdr, active_roster, previous_kpis_by_sdr=prev_kpis_by_sdr
+        )
+        manager_html = manager_template.render(
+            date=date_str, summary=summary, leaderboard=rows,
+            team_donut_svg=team_donut_svg, team_legend=team_legend, logo_data_uri=logo,
+        )
+        manager_pdf_path = TMP_DIR / f"manager_report_{date_str}.pdf"
+        render_long_pdf(manager_html, str(manager_pdf_path), page_width_px=940)
 
-    send_email_with_attachment(
-        to=TEST_RECIPIENT,
-        subject=f"[TEST] Team Daily Rollup - {date_str}",
-        text_body=f"Team daily performance rollup for {date_str} attached.",
-        attachment_path=str(manager_pdf_path),
-        attachment_filename=f"Team_Daily_Rollup_{date_str}.pdf",
-    )
+        recipients = [test_recipient] if test_recipient else manager_recipients
+        if not recipients:
+            print("WARNING: no manager emails configured; skipping manager report.")
+        for recipient in recipients:
+            send_email_with_attachment(
+                to=recipient,
+                subject=f"Team Daily Rollup - {date_str}",
+                text_body=f"Team daily performance rollup for {date_str} attached.",
+                attachment_path=str(manager_pdf_path),
+                attachment_filename=f"Team_Daily_Rollup_{date_str}.pdf",
+            )
 
 
 if __name__ == "__main__":
@@ -120,5 +141,16 @@ if __name__ == "__main__":
         default=None,
         help="PST report date to run, in YYYY-MM-DD format. Defaults to yesterday.",
     )
+    parser.add_argument(
+        "--send",
+        choices=("both", "manager", "sdr"),
+        default="both",
+        help="Which reports to email. Defaults to both.",
+    )
+    parser.add_argument(
+        "--test-recipient",
+        default=None,
+        help="Send all selected reports to this address instead of the configured recipients.",
+    )
     args = parser.parse_args()
-    main(report_date=args.date)
+    main(report_date=args.date, send_mode=args.send, test_recipient=args.test_recipient)

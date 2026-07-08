@@ -4,15 +4,13 @@ Pulls yesterday's calls from Aircall, computes per-SDR KPIs, cross-references
 sample counts against the Sample Google Sheet, and generates a branded,
 chart-heavy PDF report — one per SDR plus a team rollup for managers.
 
-## Current phase: PDF-only test mode
+## Current phase: PDF delivery
 
 `send_pdf_report.py` is the active script. It generates a long, unpaginated
 PDF for each SDR and for the manager rollup, then emails each as a plain-text
-message with the PDF attached — **everything currently routes to
-`jason.rui@schneiderinnovations.com`** regardless of the real addresses in
-`sdrs.json`, so this can be validated against real data before going live to
-the actual team. `send_report.py` (the HTML-email version) is still here for
-later, once you're ready to switch delivery modes.
+message with the PDF attached. Recipients come from `sdrs.json`. Use
+`--test-recipient` to send the selected reports to one test address instead of
+the real recipients.
 
 ## Before running
 
@@ -42,6 +40,11 @@ later, once you're ready to switch delivery modes.
    - `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, `GMAIL_REFRESH_TOKEN`
      (re-authorized per step 1 above)
 
+5. **Set recipients** in `sdrs.json`:
+   - `sdrs[].email` controls each individual SDR dashboard recipient.
+   - `managers` controls who receives the manager rollup. Add multiple manager
+     emails as separate strings in the array.
+
 ## Testing locally
 
 ```bash
@@ -58,15 +61,22 @@ export GMAIL_REFRESH_TOKEN=...
 python send_pdf_report.py
 # Optional backfill/rerun for a specific PST report date:
 python send_pdf_report.py --date 2026-07-06
+# Only send the manager dashboard:
+python send_pdf_report.py --send manager
+# Only send individual SDR dashboards:
+python send_pdf_report.py --send sdr
+# Test without sending to the real recipients:
+python send_pdf_report.py --send both --test-recipient you@example.com
 ```
 
-This sends real Aircall + Sheet data, real charts, to
-`jason.rui@schneiderinnovations.com` only - nothing goes to the actual team
-in this phase.
+This sends real Aircall + Sheet data and real charts. Without
+`--test-recipient`, emails go to the recipients configured in `sdrs.json`.
 
 The scheduled GitHub Action defaults to yesterday in Pacific time. When running
 it manually from GitHub Actions, fill in the optional `report_date` field with a
-date like `2026-07-06` to rerun a specific day.
+date like `2026-07-06` to rerun a specific day. Use `send_mode` to choose
+`both`, `manager`, or `sdr`; use `test_recipient` to route all selected reports
+to one email address for testing.
 
 ## Going live (later)
 
@@ -75,10 +85,7 @@ Once PDF output has been checked against a few real days:
    email body with the PDF as a fallback attachment (discussed earlier -
    HTML gives Gmail/mobile users a glance-without-opening experience, PDF
    guarantees the charts render correctly for Outlook desktop users).
-2. Replace `TEST_RECIPIENT` in `send_pdf_report.py` with real per-SDR/
-   manager routing from `sdrs.json` (same pattern already in
-   `send_report.py`).
-3. Update the GitHub Actions workflow's cron to the live schedule/recipient
+2. Update the GitHub Actions workflow's cron to the live schedule/recipient
    logic.
 
 ## Known things to revisit
