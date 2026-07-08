@@ -1,0 +1,10 @@
+{
+  "sdrs": [
+    {"name": "Lhoreto Bamiano", "email": "REPLACE_ME"},
+    {"name": "Maria Gladys Palmares", "email": "REPLACE_ME"},
+    {"name": "Basilio Asuncion", "email": "REPLACE_ME"},
+    {"name": "Stephanie Ong", "email": "REPLACE_ME"},
+    {"name": "Harhel Grace Manansala", "email": "REPLACE_ME"}
+  ],
+  "managers": ["REPLACE_ME"]
+}

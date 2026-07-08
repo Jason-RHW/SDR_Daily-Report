@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  @media only screen and (max-width: 660px) {
+    .container-table { width: 100% !important; }
+    .stack-cell { display: block !important; width: 100% !important; padding: 0 !important; }
+    .stack-cell-pad { padding: 0 0 20px 0 !important; }
+    .hide-mobile { display: none !important; }
+  }
+</style>
+</head>
+<body style="font-family: Arial, Helvetica, sans-serif; background:#EEF0F4; margin:0; padding:0;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#EEF0F4;">
+<tr><td align="center" style="padding:28px 16px;">
+
+<table class="container-table" width="700" cellpadding="0" cellspacing="0" style="max-width:700px; background:#ffffff; border-radius:10px; overflow:hidden; border:1px solid #E5E7EB;">
+
+  <!-- Header -->
+  <tr>
+    <td style="padding:22px 28px; border-bottom:3px solid #B62523;">
+      <img src="{{ logo_data_uri }}" alt="Schneider Direct" style="display:block; height:34px; width:auto;">
+    </td>
+  </tr>
+
+  <!-- Title -->
+  <tr>
+    <td style="padding:24px 28px 20px 28px;">
+      <div style="font-size:11px; letter-spacing:1px; color:#B62523; font-weight:bold; text-transform:uppercase;">Daily Performance</div>
+      <div style="font-size:21px; color:#111827; font-weight:bold; margin-top:5px;">{{ sdr_name }} &middot; {{ date }}</div>
+    </td>
+  </tr>
+
+  <!-- Today's Activity panel: 3 columns on desktop, stacked on mobile -->
+  <tr>
+    <td style="padding:0 28px 24px 28px;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E5E7EB; border-radius:10px;">
+        <tr>
+          <td style="padding:22px;">
+            <div style="font-size:12px; color:#374151; font-weight:bold; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:18px;">Today's Activity</div>
+            <table width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+
+                <!-- Call breakdown -->
+                <td class="stack-cell stack-cell-pad" width="34%" valign="top" style="padding-right:18px;">
+                  <div style="font-size:12px; color:#6B7280; font-weight:bold; margin-bottom:12px;">Call Breakdown</div>
+                  <table cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td width="120" valign="middle">{{ kpis.donut_svg | safe }}</td>
+                      <td valign="middle" style="padding-left:14px;">
+                        <table cellpadding="0" cellspacing="0">
+                          {% for item in kpis.call_type_legend %}
+                          <tr>
+                            <td style="padding:4px 0;"><div style="width:9px; height:9px; background:{{ item.color }}; border-radius:2px;"></div></td>
+                            <td style="padding:4px 0 4px 7px; font-size:12px; color:#374151;">{{ item.label }}</td>
+                            <td style="padding:4px 0 4px 8px; font-size:12px; color:#111827; font-weight:bold; text-align:right;">{{ item.pct }}%</td>
+                            {% if item.label == 'Connected' %}
+                            <td style="padding:4px 0 4px 6px; font-size:10px; color:{{ kpis.deltas.connection_rate.color }}; font-weight:bold; white-space:nowrap;">{{ kpis.deltas.connection_rate.label }}</td>
+                            {% else %}
+                            <td></td>
+                            {% endif %}
+                          </tr>
+                          {% endfor %}
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+
+                <td class="hide-mobile" width="1" style="background:#E5E7EB;">&nbsp;</td>
+
+                <!-- Clock -->
+                <td class="stack-cell stack-cell-pad" width="34%" valign="top" style="padding-left:18px; padding-right:18px;">
+                  <div style="font-size:12px; color:#6B7280; font-weight:bold; margin-bottom:12px;">Call Span &amp; Activity</div>
+                  <table cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td width="130" valign="middle">{{ kpis.clock_svg | safe }}</td>
+                      <td valign="middle" style="padding-left:12px;">
+                        <table cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td colspan="2" style="padding:0 0 6px 0; font-size:10px; color:#9CA3AF; white-space:nowrap;">{{ kpis.start_time_str }} &rarr; {{ kpis.end_time_str }}</td>
+                          </tr>
+                          <tr>
+                            <td style="padding:4px 0;"><div style="width:9px; height:9px; background:#059669; border-radius:2px;"></div></td>
+                            <td style="padding:4px 0 4px 7px; font-size:12px; color:#374151; white-space:nowrap;">Active <b style="color:#111827;">{{ kpis.active_hrs }}h</b> <span style="font-size:10px; color:{{ kpis.deltas.active_hrs.color }}; font-weight:bold;">{{ kpis.deltas.active_hrs.label }}</span></td>
+                          </tr>
+                          <tr>
+                            <td style="padding:4px 0;"><div style="width:9px; height:9px; background:#D97706; border-radius:2px;"></div></td>
+                            <td style="padding:4px 0 4px 7px; font-size:12px; color:#374151; white-space:nowrap;">Idle <b style="color:#111827;">{{ kpis.idle_hrs }}h</b></td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+
+                <td class="hide-mobile" width="1" style="background:#E5E7EB;">&nbsp;</td>
+
+                <!-- Key stats -->
+                <td class="stack-cell" width="24%" valign="top" style="padding-left:18px;">
+                  <div style="font-size:12px; color:#6B7280; font-weight:bold; margin-bottom:12px;">Key Stats</div>
+                  <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                      <td style="padding-bottom:10px;">
+                        <table width="100%" cellpadding="0" cellspacing="0" style="background:#F9FAFB; border:1px solid #F0F1F3; border-radius:8px;">
+                          <tr><td style="padding:12px; text-align:center;">
+                            <div style="font-size:20px; font-weight:bold; color:#B62523;">{{ kpis.samples }}</div>
+                            <div style="font-size:10px; color:#6B7280; margin-top:2px;"># SAMPLES</div>
+                            <div style="font-size:10px; font-weight:bold; color:{{ kpis.deltas.samples.color }}; margin-top:3px;">{{ kpis.deltas.samples.label }}</div>
+                          </td></tr>
+                        </table>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <table width="100%" cellpadding="0" cellspacing="0" style="background:#F9FAFB; border:1px solid #F0F1F3; border-radius:8px;">
+                          <tr><td style="padding:12px; text-align:center;">
+                            <div style="font-size:20px; font-weight:bold; color:#223B89;">{{ (kpis.conversion_rate * 100) | round(1) }}%</div>
+                            <div style="font-size:10px; color:#6B7280; margin-top:2px;">CONVERSION</div>
+                            <div style="font-size:10px; font-weight:bold; color:{{ kpis.deltas.conversion_rate.color }}; margin-top:3px;">{{ kpis.deltas.conversion_rate.label }}</div>
+                          </td></tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Samples sent today: business names for form reconciliation -->
+  <tr>
+    <td style="padding:0 28px 24px 28px;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E5E7EB; border-radius:10px;">
+        <tr>
+          <td style="padding:20px 22px;">
+            <div style="font-size:12px; color:#374151; font-weight:bold; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:4px;">Samples Sent Today</div>
+            <div style="font-size:11px; color:#9CA3AF; margin-bottom:14px;">Check each business against your submitted sample request forms.</div>
+            {% if kpis.sample_businesses %}
+            <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;">
+              <tr style="border-bottom:1px solid #F0F1F3;">
+                <td style="padding:6px 4px; font-size:11px; color:#9CA3AF; font-weight:bold;">#</td>
+                <td style="padding:6px 4px; font-size:11px; color:#9CA3AF; font-weight:bold;">Business Name</td>
+              </tr>
+              {% for item in kpis.sample_businesses %}
+              <tr style="background: {{ '#F9FAFB' if loop.index is even else '#ffffff' }}; border-bottom:1px solid #F0F1F3;">
+                <td style="padding:9px 4px; font-size:13px; color:#9CA3AF;">{{ loop.index }}</td>
+                <td style="padding:9px 4px; font-size:13px; color:#111827; font-weight:bold;">{{ item.business_name }}</td>
+              </tr>
+              {% endfor %}
+            </table>
+            {% else %}
+            <div style="font-size:13px; color:#9CA3AF; padding:8px 4px;">No samples logged today.</div>
+            {% endif %}
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Footer -->
+  <tr>
+    <td style="padding:16px 28px; background:#F9FAFB; border-top:1px solid #E5E7EB;">
+      <span style="font-size:11px; color:#9CA3AF;">Automated daily report &middot; Schneider Direct SDR Performance</span>
+    </td>
+  </tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>

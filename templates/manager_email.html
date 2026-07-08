@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  @media only screen and (max-width: 780px) {
+    .container-table { width: 100% !important; }
+    .grid-cell { display: block !important; width: 100% !important; padding: 0 0 12px 0 !important; }
+  }
+</style>
+</head>
+<body style="font-family: Arial, Helvetica, sans-serif; background:#EEF0F4; margin:0; padding:0;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#EEF0F4;">
+<tr><td align="center" style="padding:28px 16px;">
+
+<table class="container-table" width="900" cellpadding="0" cellspacing="0" style="max-width:900px; background:#ffffff; border-radius:10px; overflow:hidden; border:1px solid #E5E7EB;">
+
+  <!-- Header -->
+  <tr>
+    <td style="padding:22px 32px; border-bottom:3px solid #B62523;">
+      <img src="{{ logo_data_uri }}" alt="Schneider Direct" style="display:block; height:34px; width:auto;">
+    </td>
+  </tr>
+
+  <!-- Title -->
+  <tr>
+    <td style="padding:24px 32px 20px 32px;">
+      <div style="font-size:11px; letter-spacing:1px; color:#B62523; font-weight:bold; text-transform:uppercase;">Team Performance</div>
+      <div style="font-size:21px; color:#111827; font-weight:bold; margin-top:5px;">SDR Daily Rollup &middot; {{ date }}</div>
+    </td>
+  </tr>
+
+  <!-- Team summary cards -->
+  <tr>
+    <td style="padding:0 24px 24px 24px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td width="20%" style="padding:0 5px;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#223B89; border-radius:8px;">
+              <tr><td style="padding:14px; text-align:center;">
+                <div style="font-size:22px; font-weight:bold; color:#ffffff;">{{ summary.total_calls }}</div>
+                <div style="font-size:9px; color:#C7D0EA; margin-top:2px;">TEAM CALLS</div>
+                <div style="font-size:10px; font-weight:bold; color:#ffffff; margin-top:4px; opacity:0.9;">{{ summary.deltas.total_calls.label }}</div>
+              </td></tr>
+            </table>
+          </td>
+          <td width="20%" style="padding:0 5px;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#F9FAFB; border:1px solid #F0F1F3; border-radius:8px;">
+              <tr><td style="padding:14px; text-align:center;">
+                <div style="font-size:22px; font-weight:bold; color:#223B89;">{{ (summary.connection_rate * 100) | round(1) }}%</div>
+                <div style="font-size:9px; color:#6B7280; margin-top:2px;">AVG CONNECT</div>
+                <div style="font-size:10px; font-weight:bold; color:{{ summary.deltas.connection_rate.color }}; margin-top:4px;">{{ summary.deltas.connection_rate.label }}</div>
+              </td></tr>
+            </table>
+          </td>
+          <td width="20%" style="padding:0 5px;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#F9FAFB; border:1px solid #F0F1F3; border-radius:8px;">
+              <tr><td style="padding:14px; text-align:center;">
+                <div style="font-size:22px; font-weight:bold; color:#223B89;">{{ (summary.conversion_rate * 100) | round(1) }}%</div>
+                <div style="font-size:9px; color:#6B7280; margin-top:2px;">AVG CONVERT</div>
+                <div style="font-size:10px; font-weight:bold; color:{{ summary.deltas.conversion_rate.color }}; margin-top:4px;">{{ summary.deltas.conversion_rate.label }}</div>
+              </td></tr>
+            </table>
+          </td>
+          <td width="20%" style="padding:0 5px;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#F9FAFB; border:1px solid #F0F1F3; border-radius:8px;">
+              <tr><td style="padding:14px; text-align:center;">
+                <div style="font-size:22px; font-weight:bold; color:#B62523;">{{ summary.samples }}</div>
+                <div style="font-size:9px; color:#6B7280; margin-top:2px;">SAMPLES SENT</div>
+                <div style="font-size:10px; font-weight:bold; color:{{ summary.deltas.samples.color }}; margin-top:4px;">{{ summary.deltas.samples.label }}</div>
+              </td></tr>
+            </table>
+          </td>
+          <td width="20%" style="padding:0 5px;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background:#F9FAFB; border:1px solid #F0F1F3; border-radius:8px;">
+              <tr><td style="padding:14px; text-align:center;">
+                <div style="font-size:22px; font-weight:bold; color:#223B89;">{{ summary.active_hrs }}</div>
+                <div style="font-size:9px; color:#6B7280; margin-top:2px;">ACTIVE HRS</div>
+                <div style="font-size:10px; font-weight:bold; color:{{ summary.deltas.active_hrs.color }}; margin-top:4px;">{{ summary.deltas.active_hrs.label }}</div>
+              </td></tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Team composition panel -->
+  <tr>
+    <td style="padding:0 32px 24px 32px;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E5E7EB; border-radius:10px;">
+        <tr>
+          <td style="padding:22px 24px;">
+            <div style="font-size:12px; color:#374151; font-weight:bold; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:16px;">Team Composition &mdash; Total Calls by SDR</div>
+            <table cellpadding="0" cellspacing="0">
+              <tr>
+                <td width="170" valign="middle">{{ team_donut_svg | safe }}</td>
+                <td valign="middle" style="padding-left:28px;">
+                  <table cellpadding="0" cellspacing="0">
+                    {% for item in team_legend %}
+                    <tr>
+                      <td style="padding:5px 0;"><div style="width:10px; height:10px; background:{{ item.color }}; border-radius:2px;"></div></td>
+                      <td style="padding:5px 0 5px 8px; font-size:13px; color:#374151;">{{ item.name }}</td>
+                      <td style="padding:5px 0 5px 20px; font-size:13px; color:#111827; font-weight:bold; text-align:right;">{{ item.count }}</td>
+                      <td style="padding:5px 0 5px 6px; font-size:12px; color:#6B7280;">({{ item.pct }}%)</td>
+                    </tr>
+                    {% endfor %}
+                  </table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+
+  <!-- Per-SDR breakdown: 2-column grid on desktop, stacked on mobile -->
+  <tr>
+    <td style="padding:0 32px 8px 32px;">
+      <div style="font-size:12px; color:#374151; font-weight:bold; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:12px;">SDR Breakdown</div>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:0 32px 24px 32px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        {% for pair in leaderboard | batch(2) %}
+        <tr>
+          {% for row in pair %}
+          <td class="grid-cell" width="50%" valign="top" style="padding:0 6px 12px 6px;">
+          <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #E5E7EB; border-radius:8px;">
+            <tr>
+              <td width="4" style="background:{{ row.accent_color }}; border-radius:8px 0 0 8px;">&nbsp;</td>
+              <td style="padding:14px 16px;">
+
+                <table width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td colspan="2" style="padding-bottom:12px;">
+                      <table cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="width:20px; height:20px; background:{{ row.accent_color }}; border-radius:10px; text-align:center; vertical-align:middle;">
+                            <span style="font-size:10px; color:#ffffff; font-weight:bold;">{{ row.rank }}</span>
+                          </td>
+                          <td style="padding-left:9px; font-size:13px; color:#111827; font-weight:bold;">{{ row.name }}</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <!-- call type donut + legend -->
+                    <td valign="top" style="padding-bottom:12px;">
+                      <table cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td width="100" valign="middle">{{ row.mini_donut_svg | safe }}</td>
+                          <td valign="middle" style="padding-left:10px;">
+                            <table cellpadding="0" cellspacing="0">
+                              {% for item in row.call_type_legend %}
+                              <tr>
+                                <td style="padding:3px 0;"><div style="width:8px; height:8px; background:{{ item.color }}; border-radius:2px;"></div></td>
+                                <td style="padding:3px 0 3px 6px; font-size:11px; color:#374151;">{{ item.label }}</td>
+                                <td style="padding:3px 0 3px 8px; font-size:11px; color:#111827; font-weight:bold; text-align:right;">{{ item.pct }}%</td>
+                                {% if item.label == 'Connected' %}
+                                <td style="padding:3px 0 3px 5px; font-size:9px; color:{{ row.deltas.connection_rate.color }}; font-weight:bold; white-space:nowrap;">{{ row.deltas.connection_rate.label }}</td>
+                                {% else %}
+                                <td></td>
+                                {% endif %}
+                              </tr>
+                              {% endfor %}
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                    <!-- samples/conversion cards -->
+                    <td valign="top" style="padding-left:10px;">
+                      <table cellpadding="0" cellspacing="0">
+                        <tr>
+                          <td style="padding-bottom:6px;">
+                            <table cellpadding="0" cellspacing="0" style="background:#F9FAFB; border-radius:6px; border:1px solid #F0F1F3;">
+                              <tr><td style="padding:7px 12px; text-align:center;">
+                                <div style="font-size:15px; font-weight:bold; color:#B62523;">{{ row.samples }}</div>
+                                <div style="font-size:8px; color:#9CA3AF; white-space:nowrap;"># SAMPLES</div>
+                                <div style="font-size:9px; font-weight:bold; color:{{ row.deltas.samples.color }}; margin-top:2px;">{{ row.deltas.samples.label }}</div>
+                              </td></tr>
+                            </table>
+                          </td>
+                        </tr>
+                        <tr>
+                          <td>
+                            <table cellpadding="0" cellspacing="0" style="background:#F9FAFB; border-radius:6px; border:1px solid #F0F1F3;">
+                              <tr><td style="padding:7px 12px; text-align:center;">
+                                <div style="font-size:15px; font-weight:bold; color:#223B89;">{{ (row.conversion_rate * 100) | round(1) }}%</div>
+                                <div style="font-size:8px; color:#9CA3AF; white-space:nowrap;">CONVERSION</div>
+                                <div style="font-size:9px; font-weight:bold; color:{{ row.deltas.conversion_rate.color }}; margin-top:2px;">{{ row.deltas.conversion_rate.label }}</div>
+                              </td></tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                  <tr>
+                    <!-- clock + legend, full width beneath -->
+                    <td colspan="2" style="padding-top:4px; border-top:1px solid #F0F1F3;">
+                      <table cellpadding="0" cellspacing="0" style="margin-top:10px;">
+                        <tr>
+                          <td width="90" valign="middle">{{ row.clock_svg | safe }}</td>
+                          <td valign="middle" style="padding-left:12px;">
+                            <table cellpadding="0" cellspacing="0">
+                              <tr>
+                                <td colspan="2" style="padding:0 0 4px 0; font-size:9px; color:#9CA3AF; white-space:nowrap;">{{ row.start_time_str }} &rarr; {{ row.end_time_str }}</td>
+                              </tr>
+                              <tr>
+                                <td style="padding:3px 0;"><div style="width:8px; height:8px; background:#059669; border-radius:2px;"></div></td>
+                                <td style="padding:3px 0 3px 6px; font-size:11px; color:#374151; white-space:nowrap;">Active <b style="color:#111827;">{{ row.active_hrs }}h</b> <span style="font-size:9px; color:{{ row.deltas.active_hrs.color }}; font-weight:bold;">{{ row.deltas.active_hrs.label }}</span></td>
+                              </tr>
+                              <tr>
+                                <td style="padding:3px 0;"><div style="width:8px; height:8px; background:#D97706; border-radius:2px;"></div></td>
+                                <td style="padding:3px 0 3px 6px; font-size:11px; color:#374151; white-space:nowrap;">Idle <b style="color:#111827;">{{ row.idle_hrs }}h</b></td>
+                              </tr>
+                            </table>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+
+              </td>
+            </tr>
+          </table>
+          </td>
+          {% endfor %}
+          {% if pair | length == 1 %}
+          <td class="grid-cell" width="50%">&nbsp;</td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </table>
+    </td>
+  </tr>
+
+  <!-- Footer -->
+  <tr>
+    <td style="padding:16px 32px; background:#F9FAFB; border-top:1px solid #E5E7EB;">
+      <span style="font-size:11px; color:#9CA3AF;">Automated daily report &middot; Schneider Direct SDR Performance</span>
+    </td>
+  </tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>
